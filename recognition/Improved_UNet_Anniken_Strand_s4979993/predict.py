@@ -4,20 +4,20 @@ from torch.utils.data import DataLoader
 import numpy as np
 import os
 
-from dataset import OASISSegmentationDataset
+from dataset import HipMRISegmentationDataset
 from modules import ImprovedUNet
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-test_image_dir = "/home/groups/comp3710/OASIS/keras_png_slices_test"
-test_mask_dir = "/home/groups/comp3710/OASIS/keras_png_slices_seg_test"
-model_path = "unet_model.pth"
+test_image_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
+test_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
+model_path = "unet_model_hipmri.pth"
 
-num_classes = 4
+num_classes = 6
 batch_size = 4
 
 # Load test dataset
-test_dataset = OASISSegmentationDataset(test_image_dir, test_mask_dir)
+test_dataset = HipMRISegmentationDataset(test_image_dir, test_mask_dir)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 model = ImprovedUNet(input_channels=1, output_channels=num_classes).to(device)
@@ -25,7 +25,7 @@ model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
 # Function to compute dice score per class
-def dice_score(pred, target, num_classes=4, eps=1e-6):
+def dice_score(pred, target, num_classes=6, eps=1e-6):
     pred = torch.softmax(pred, dim=1)
     pred_classes = torch.argmax(pred, dim=1)
     dice_scores = []

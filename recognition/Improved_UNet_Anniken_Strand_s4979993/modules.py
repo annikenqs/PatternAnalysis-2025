@@ -32,7 +32,7 @@ class ImprovedUNet(nn.Module):
     includes encoder-decoder structure with skip connections, 
     using InstanceNorm, LeakyReLU, and pre-activation residual blocks
     """
-    def __init__(self, input_channels=1, output_channels=4, base=64):
+    def __init__(self, input_channels=1, output_channels=6, base=64):
         super(ImprovedUNet, self).__init__()
         # encoder
         self.enc1 = ResidualDoubleConv(input_channels, 64)

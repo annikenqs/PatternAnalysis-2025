@@ -5,16 +5,16 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
 
-from dataset import OASISSegmentationDataset
+from dataset import HipMRISegmentationDataset
 from modules import ImprovedUNet
 
 # Paths and hyperparameters
-train_image_dir = "/home/groups/comp3710/OASIS/keras_png_slices_train"
-train_mask_dir = "/home/groups/comp3710/OASIS/keras_png_slices_seg_train"
-val_image_dir = "/home/groups/comp3710/OASIS/keras_png_slices_validate"
-val_mask_dir = "/home/groups/comp3710/OASIS/keras_png_slices_seg_validate"
-save_path = "unet_model.pth"
-num_classes = 4
+train_image_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+train_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
+val_image_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
+val_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate"
+save_path = "unet_model_hipmri.pth"
+num_classes = 6
 epochs = 20
 batch_size = 4
 lr = 1e-4
@@ -22,8 +22,8 @@ lr = 1e-4
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load datasets
-train_dataset = OASISSegmentationDataset(train_image_dir, train_mask_dir)
-val_dataset = OASISSegmentationDataset(val_image_dir, val_mask_dir)
+train_dataset = HipMRISegmentationDataset(train_image_dir, train_mask_dir)
+val_dataset = HipMRISegmentationDataset(val_image_dir, val_mask_dir)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
