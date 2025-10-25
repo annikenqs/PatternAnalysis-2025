@@ -7,6 +7,7 @@ import os
 
 from dataset import HipMRISegmentationDataset
 from modules import ImprovedUNet
+from modules import dice_loss
 
 # Paths and hyperparameters
 train_image_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
@@ -31,17 +32,6 @@ model = ImprovedUNet(input_channels=1, output_channels=num_classes).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-
-# Dice loss function
-def dice_loss(pred, target, eps=1e-6):
-    pred = torch.softmax(pred, dim=1)
-    target_onehot = torch.zeros_like(pred)
-    target_onehot.scatter_(1, target.unsqueeze(1), 1)
-    intersection = (pred * target_onehot).sum(dim=(0, 2, 3))
-    union = pred.sum(dim=(0, 2, 3)) + target_onehot.sum(dim=(0, 2, 3))
-    dice = (2 * intersection + eps)/(union + eps)
-    loss = 1 - dice.mean()
-    return loss
 
 train_losses = []
 val_losses = []

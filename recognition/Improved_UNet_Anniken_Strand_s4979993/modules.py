@@ -75,3 +75,30 @@ class ImprovedUNet(nn.Module):
         d1 = self.dec1(torch.cat([self.up1(d2), e1], dim=1))
 
         return self.out(d1)
+
+# Dice loss function
+def dice_loss(pred, target, eps=1e-6):
+    pred = torch.softmax(pred, dim=1)
+    target_onehot = torch.zeros_like(pred)
+    target_onehot.scatter_(1, target.unsqueeze(1), 1)
+    intersection = (pred * target_onehot).sum(dim=(0, 2, 3))
+    union = pred.sum(dim=(0, 2, 3)) + target_onehot.sum(dim=(0, 2, 3))
+    dice = (2 * intersection + eps)/(union + eps)
+    loss = 1 - dice.mean()
+    return loss
+
+
+# Function to compute dice score per class
+def dice_score(pred, target, num_classes=6, eps=1e-6):
+    pred = torch.softmax(pred, dim=1)
+    pred_classes = torch.argmax(pred, dim=1)
+    dice_scores = []
+
+    for c in range(num_classes):
+        pred_c = (pred_classes == c).float()
+        target_c = (target == c).float()
+        intersection = (pred_c * target_c).sum()
+        union = pred_c.sum() + target_c.sum()
+        dice = (2 * intersection + eps)/(union + eps)
+        dice_scores.append(dice.item())
+    return dice_scores
