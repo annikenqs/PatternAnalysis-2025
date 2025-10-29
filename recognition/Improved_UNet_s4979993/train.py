@@ -4,8 +4,9 @@ from torch.utils.data import random_split
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
+import matplotlib.pyplot as plt
 
-from dataset import HipMRISegmentationDataset
+from dataset import HipMRISegmentationDataset, RandomFlip
 from modules import ImprovedUNet
 from modules import dice_loss
 
@@ -23,7 +24,7 @@ lr = 1e-4
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load datasets
-train_dataset = HipMRISegmentationDataset(train_image_dir, train_mask_dir)
+train_dataset = HipMRISegmentationDataset(train_image_dir, train_mask_dir, transform=RandomFlip())
 val_dataset = HipMRISegmentationDataset(val_image_dir, val_mask_dir)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -69,10 +70,19 @@ for epoch in range(epochs):
 
     print(epoch+1, "/", epochs, " | training loss:", round(epoch_loss, 4), " | validation loss:", round(val_loss, 4), flush=True)
 
-    
     # Save best model
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         torch.save(model.state_dict(), save_path)
 
-
+    # Plot training and validation loss
+    plt.figure(figsize=(6, 4))
+    plt.plot(train_losses, label='Train Loss', color='steelblue')
+    plt.plot(val_losses, label='Validation Loss', color='orange')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training & Validation Loss')
+    plt.tight_layout()
+    plt.savefig("loss_curve.png", bbox_inches="tight")
+    plt.close()
