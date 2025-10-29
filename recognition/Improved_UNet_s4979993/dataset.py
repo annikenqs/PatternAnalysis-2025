@@ -4,12 +4,16 @@ from torch.utils.data import Dataset
 import nibabel as nib
 import numpy as np
 import torch.nn.functional as F
+import random
+import torchvision.transforms.functional as TF
+
 class HipMRISegmentationDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, target_size=(256, 128)):
+    def __init__(self, image_dir, mask_dir, target_size=(256, 128), transform=None):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.mask_files = sorted(os.listdir(self.mask_dir))
         self.target_size = target_size
+        self.transform = transform
 
     def __len__(self):
         return len(self.mask_files)
@@ -40,5 +44,19 @@ class HipMRISegmentationDataset(Dataset):
 
         # normalise
         img = (img - img.mean())/(img.std() + 1e-8)
+        
+        # apply data augmentation
+        if self.transform:
+            img, mask = self.transform(img, mask)
 
+        return img, mask
+    
+class RandomFlip:
+    def __call__(self, img, mask):
+        if random.random() > 0.5:
+            img = TF.hflip(img)
+            mask = TF.hflip(mask)
+        if random.random() > 0.5:
+            img = TF.vflip(img)
+            mask = TF.vflip(mask)
         return img, mask
