@@ -8,7 +8,9 @@ import random
 import torchvision.transforms.functional as TF
 
 class HipMRISegmentationDataset(Dataset):
+    """Loads and preprocesses 2D prostate MRI slices and segmentation masks"""
     def __init__(self, image_dir, mask_dir, target_size=(256, 128), transform=None):
+        """Initialises dataset"""
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.mask_files = sorted(os.listdir(self.mask_dir))
@@ -16,10 +18,11 @@ class HipMRISegmentationDataset(Dataset):
         self.transform = transform
 
     def __len__(self):
+        """Returns number of samples in the dataset"""
         return len(self.mask_files)
 
     def __getitem__(self, idx):
-        
+        """Loads, resizes, normalises and returns one image-mask pair"""
         # get matching image and mask names
         mask_name = self.mask_files[idx]
         img_name = mask_name.replace("seg_", "case_")
@@ -52,6 +55,7 @@ class HipMRISegmentationDataset(Dataset):
         return img, mask
     
 class RandomFlip:
+    """Randomly flips an image and mask horizontally or vertically"""
     def __call__(self, img, mask):
         if random.random() > 0.5:
             img = TF.hflip(img)

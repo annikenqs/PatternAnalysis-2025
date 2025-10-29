@@ -29,6 +29,7 @@ val_dataset = HipMRISegmentationDataset(val_image_dir, val_mask_dir)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
+# Model, loss and optimizer setup
 model = ImprovedUNet(input_channels=1, output_channels=num_classes).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -43,6 +44,7 @@ for epoch in range(epochs):
     model.train()
     total_loss = 0.0
 
+    # training
     for imgs, masks in train_loader:
         imgs, masks = imgs.to(device), masks.to(device)
         optimizer.zero_grad()

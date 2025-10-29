@@ -13,10 +13,10 @@ from matplotlib.colors import ListedColormap
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Paths and hyperparameters
 test_image_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 test_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
 model_path = "unet_model_hipmri.pth"
-
 num_classes = 6
 batch_size = 4
 
@@ -24,6 +24,7 @@ batch_size = 4
 test_dataset = HipMRISegmentationDataset(test_image_dir, test_mask_dir)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+# Load trained model
 model = ImprovedUNet(input_channels=1, output_channels=num_classes).to(device)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
@@ -47,7 +48,7 @@ for i, d in enumerate(mean_dice):
     print(f"Class {i}: ", round(d, 4))
 
 
-# Visualisation of predictions
+# Define class colors and labels for visualisation
 colors = [
     "#000000",  # Class 0 – black
     "#c9c9ff",  # Class 1 – purple
@@ -61,14 +62,15 @@ class_labels = [
 ]
 custom_cmap = ListedColormap(colors)
 
+# Create output directory for predictions
 output_dir = "hipmri_predictions"
 os.makedirs(output_dir, exist_ok=True)
 
+# Visualise predictions on a few examples
 num_examples = 3
 count = 0
 fig, axes = plt.subplots(num_examples, 3, figsize=(9, 3 * num_examples))
 
-# Show input, ground truth, and predictions
 with torch.no_grad():
     for imgs, masks in test_loader:
         imgs, masks = imgs.to(device), masks.to(device)
@@ -83,6 +85,7 @@ with torch.no_grad():
             mask = masks[j].cpu()
             pred = preds[j].cpu()
 
+            # Plot input, ground truth and prediction
             ax_img, ax_gt, ax_pred = axes[count]
             ax_img.imshow(img, cmap="gray")
             ax_gt.imshow(mask, cmap=custom_cmap, vmin=0, vmax=len(colors)-1)
@@ -125,9 +128,11 @@ plt.ylabel("Dice coefficient", fontsize=10)
 plt.title(f"Dice per class", fontsize=10)
 plt.xticks(fontsize=8)
 plt.yticks(fontsize=8)
+
 # Add value labels above bars
 for bar, val in zip(bars, mean_dice):
     plt.text(bar.get_x() + bar.get_width()/2, val + 0.02, f"{val:.3f}", ha="center", fontsize=9)
+    
 plt.tight_layout()
 dice_plot_path = os.path.join(output_dir, "dice_coefficients.png")
 plt.savefig(dice_plot_path, bbox_inches="tight")

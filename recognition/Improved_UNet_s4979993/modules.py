@@ -5,9 +5,11 @@ import torch.nn.functional as F
 
 class ResidualDoubleConv(nn.Module):
     """
-    Basic block with two 3x3 conv layers, InstanceNorm and LeakyReLU. Used throughout the network
+    Basic block with two 3x3 conv layers, InstanceNorm and LeakyReLU 
+    Includes a residual (skip) connection for improved gradient flow
     """
     def __init__(self, in_channels, out_channels):
+        """Initialises the ResidualDoubleConv block"""
         super().__init__()
         self.conv = nn.Sequential(
             nn.InstanceNorm2d(in_channels),
@@ -25,6 +27,7 @@ class ResidualDoubleConv(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass through the ResidualDoubleConv block"""
         residual = self.residual(x)
         out = self.conv(x)
         return out + residual
@@ -33,11 +36,11 @@ class ImprovedUNet(nn.Module):
     """
     Improved U-Net for image segmentation, inspired by Isensee et al. (2018)
     includes encoder-decoder structure with skip connections, 
-    using InstanceNorm, LeakyReLU, and pre-activation residual blocks
+    using InstanceNorm, LeakyReLU and pre-activation residual blocks
     """
     def __init__(self, input_channels=1, output_channels=6):
+        """Initialises the Improved U-Net architecture"""
         super(ImprovedUNet, self).__init__()
-
         # encoder
         self.enc1 = ResidualDoubleConv(input_channels, 16)
         self.down1 = nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1)
@@ -74,6 +77,7 @@ class ImprovedUNet(nn.Module):
 
 
     def forward(self, x):
+        """Forward pass through encoder, bottleneck and decoder with skip connections"""
         # encoder
         e1 = self.enc1(x)
         e2 = self.enc2(self.down1(e1))
@@ -96,8 +100,8 @@ class ImprovedUNet(nn.Module):
         out = seg1 + seg2 + seg3
         return out
 
-# Dice loss function
 def dice_loss(pred, target, eps=1e-6):
+    """Computes multi-class Dice loss"""
     pred = torch.softmax(pred, dim=1)
     target_onehot = torch.zeros_like(pred)
     target_onehot.scatter_(1, target.unsqueeze(1), 1)
@@ -108,8 +112,8 @@ def dice_loss(pred, target, eps=1e-6):
     return loss
 
 
-# Function to compute dice score per class
 def dice_score(pred, target, num_classes=6, eps=1e-6):
+    """Computes Dice coefficient per class"""
     pred = torch.softmax(pred, dim=1)
     pred_classes = torch.argmax(pred, dim=1)
     dice_scores = []
