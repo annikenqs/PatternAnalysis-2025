@@ -50,16 +50,22 @@ for i, d in enumerate(mean_dice):
 
 # Define class colors and labels for visualisation
 colors = [
-    "#000000",  # Class 0 – black
-    "#c9c9ff",  # Class 1 – purple
-    "#bb6688",  # Class 2 – red
-    "#2bc191",  # Class 3 – green
-    "#65a3df",  # Class 4 – blue
-    "#ffd966"   # Class 5 – yellow
+    "#000000",  # 0 – Background (black)
+    "#c9c9ff",  # 1 – Body (purple)
+    "#bb6688",  # 2 – Bones (red)
+    "#2bc191",  # 3 – Bladder (green)
+    "#65a3df",  # 4 - Rectum (blue)
+    "#ffd966"   # 5 – Prostate (yellow)
 ]
 class_labels = [
-    "Class 0", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"
+    "0: Background",
+    "1: Body",
+    "2: Bones",
+    "3: Bladder",
+    "4: Rectum",
+    "5: Prostate"
 ]
+
 custom_cmap = ListedColormap(colors)
 
 # Create output directory for predictions
@@ -68,8 +74,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Visualise predictions on a few examples
 num_examples = 3
-count = 0
-fig, axes = plt.subplots(num_examples, 3, figsize=(9, 3 * num_examples))
+found_samples = []
 
 with torch.no_grad():
     for imgs, masks in test_loader:
@@ -78,30 +83,35 @@ with torch.no_grad():
         preds = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
 
         for j in range(imgs.size(0)):
-            if count >= num_examples:
-                break
-
-            img = imgs[j].cpu().squeeze()
             mask = masks[j].cpu()
-            pred = preds[j].cpu()
+            unique_classes = torch.unique(mask)
 
-            # Plot input, ground truth and prediction
-            ax_img, ax_gt, ax_pred = axes[count]
-            ax_img.imshow(img, cmap="gray")
-            ax_gt.imshow(mask, cmap=custom_cmap, vmin=0, vmax=len(colors)-1)
-            ax_pred.imshow(pred, cmap=custom_cmap, vmin=0, vmax=len(colors)-1)
+            # Only keep samples containing all 6 classes
+            if len(unique_classes) == num_classes and all(
+                c in unique_classes for c in range(num_classes)
+            ):
+                found_samples.append((imgs[j].cpu().squeeze(), mask, preds[j].cpu()))
 
-            ax_img.set_title("Input MRI", fontsize=11)
-            ax_gt.set_title("Ground Truth", fontsize=11)
-            ax_pred.set_title("Prediction", fontsize=11)
-
-            for ax in (ax_img, ax_gt, ax_pred):
-                ax.axis("off")
-
-            count += 1
-
-        if count >= num_examples:
+            if len(found_samples) >= num_examples:
+                break
+        if len(found_samples) >= num_examples:
             break
+
+# Plot input, ground truth and prediction
+fig, axes = plt.subplots(num_examples, 3, figsize=(9, 3 * num_examples))
+
+for i, (img, mask, pred) in enumerate(found_samples):
+    ax_img, ax_gt, ax_pred = axes[i]
+    ax_img.imshow(img, cmap="gray")
+    ax_gt.imshow(mask, cmap=custom_cmap, vmin=0, vmax=len(colors)-1)
+    ax_pred.imshow(pred, cmap=custom_cmap, vmin=0, vmax=len(colors)-1)
+
+    ax_img.set_title("Input MRI", fontsize=11)
+    ax_gt.set_title("Ground Truth", fontsize=11)
+    ax_pred.set_title("Prediction", fontsize=11)
+
+    for ax in (ax_img, ax_gt, ax_pred):
+        ax.axis("off")
 
 # Add color legend for classes
 patches = [mpatches.Patch(color=colors[i], label=class_labels[i]) for i in range(len(colors))]
@@ -120,13 +130,13 @@ plt.savefig(os.path.join(output_dir, "hipmri_predictions.png"), bbox_inches="tig
 plt.close()
     
 # Dice coefficient visualisation
-classes = [f"Class {i}" for i in range(num_classes)]
-plt.figure(figsize=(5, 4))
+classes = ["Background", "Body", "Bones", "Bladder", "Rectum", "Prostate"]
+plt.figure(figsize=(6, 4))
 bars = plt.bar(classes, mean_dice, color="#b19cd8")
 plt.ylim(0, 1)
 plt.ylabel("Dice coefficient", fontsize=10)
-plt.title(f"Dice per class", fontsize=10)
-plt.xticks(fontsize=8)
+plt.title("Dice per class", fontsize=10)
+plt.xticks(rotation=30, fontsize=8)
 plt.yticks(fontsize=8)
 
 # Add value labels above bars
